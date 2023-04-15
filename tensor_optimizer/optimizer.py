@@ -79,7 +79,13 @@ class TT_tensor_optimizer(abstract_tensor_optimizer):
             else:
                 for index, value in enumerate(i_index):
                     samples_index[index].append(value)
-        print(samples_index)
+        # 计算梯度
+        gradient = {}
+        for i in range(self.__source_TT_tensor.get_TT_rank()):
+            gradient[i] = np.zeros(self.__source_TT_tensor.get_i_G_tensor(i).shape)
+            for j in range(gradient[i].shape[1]):
+                # todo: 求梯度
+                pass
 
 
 
