@@ -84,7 +84,7 @@ class TT_tensor_optimizer(abstract_tensor_optimizer):
         for i in range(self.__source_TT_tensor.get_TT_rank()):
             gradient[i] = np.zeros(self.__source_TT_tensor.get_i_G_tensor(i).shape)
             for j in range(gradient[i].shape[1]):
-                # todo: 求梯度
+                # todo: 求梯度,
                 pass
 
 
