@@ -12,4 +12,6 @@ print(test_optimizer.get_source_TT_tensor().get_TT_rank())
 for i in range(test_optimizer.get_source_TT_tensor().get_TT_rank()):
     print(test_optimizer.get_source_TT_tensor().get_i_G_tensor(i).shape)
 
-test_optimizer.stochastic_TT_SGD(0.00001)
+# test_optimizer.stochastic_TT_SGD(0.00001)
+print("-------")
+print(target_tensor[1,2,3,4,4,4])

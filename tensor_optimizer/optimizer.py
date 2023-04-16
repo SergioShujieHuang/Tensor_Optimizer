@@ -83,9 +83,37 @@ class TT_tensor_optimizer(abstract_tensor_optimizer):
         gradient = {}
         for i in range(self.__source_TT_tensor.get_TT_rank()):
             gradient[i] = np.zeros(self.__source_TT_tensor.get_i_G_tensor(i).shape)
-            for j in range(gradient[i].shape[1]):
-                # todo: 求梯度,
-                pass
+
+            for sample in samples_index:
+                before_index = 0
+                after_index = i + 1
+                G_before = None
+                G_after = None
+                while before_index < i:
+                    if before_index == 0:
+                        G_before = self.__source_TT_tensor.get_i_G_tensor(before_index)[sample[before_index]:]
+                    else:
+                        G_before = np.dot(G_before,
+                                          self.__source_TT_tensor.get_i_G_tensor(before_index)[:sample[before_index]:])
+                    before_index += 1
+                while after_index <= self.__source_TT_tensor.get_TT_rank()-1:
+                    if G_after is None:
+                        if after_index == self.__source_TT_tensor.get_TT_rank()-1:
+                            G_after = self.__source_TT_tensor.get_i_G_tensor(after_index)[:sample[after_index]]
+                        else:
+                            G_after = self.__source_TT_tensor.get_i_G_tensor(after_index)[:sample[after_index]:]
+                    else:
+                        if after_index == self.__source_TT_tensor.get_TT_rank() - 1:
+                            G_after = np.dot(G_after,
+                                             self.__source_TT_tensor.get_i_G_tensor(after_index)[:sample[after_index]])
+                        else:
+                            G_after = np.dot(G_after,
+                                             self.__source_TT_tensor.get_i_G_tensor(after_index)[:sample[after_index]:])
+                if G_before is None and G_after is not None:
+                    if i == 0:
+                        gradient[i][sample[i]:] += (np.dot(self.__source_TT_tensor.get_i_G_tensor(i)[sample[i]:],
+                                                           G_after) - self.get_target_tensor()[sample]
+                                                    ) * G_after.transpose()
 
 
 
