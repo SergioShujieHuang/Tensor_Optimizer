@@ -7,13 +7,6 @@ from . import data_loader
 class abstract_tensor_optimizer(ABC):
     def __init__(self, target_tensor):
         self.__target_tensor = target_tensor
-        self.__learning_rate = 0.000000000001
-
-    def get_learning_rate(self):
-        return self.__learning_rate
-
-    def set_learning_rate(self, learning_rate):
-        self.__learning_rate = learning_rate
 
     def set_target_tensor(self, target_tensor):
         self.__target_tensor = target_tensor
@@ -22,7 +15,7 @@ class abstract_tensor_optimizer(ABC):
         return self.__target_tensor
 
     @abstractmethod
-    def stochastic_TT_SGD(self, sampling_rate):
+    def stochastic_TT_SGD(self, sampling_rate, iteration_time, learing_rate):
         pass
 
 
@@ -66,7 +59,7 @@ class TT_tensor_optimizer(abstract_tensor_optimizer):
                                                            (self.get_target_tensor().shape[i] +
                                                             self.get_target_tensor().shape[i + 1]) // 2)
 
-    def stochastic_TT_SGD(self, sampling_rate, iteration_time):
+    def stochastic_TT_SGD(self, sampling_rate, iteration_time, learing_rate):
         # 采样个数
         numbers_of_samples = int(self.get_target_tensor().size * sampling_rate)
         # 生成采样点坐标
@@ -130,7 +123,7 @@ class TT_tensor_optimizer(abstract_tensor_optimizer):
                                                     ) * (np.outer(G_after, G_before)).transpose()
             for i in range(self.__source_TT_tensor.get_TT_rank()):
                 self.__source_TT_tensor.set_i_G_tensor(i, self.get_source_TT_tensor().get_i_G_tensor(i) -
-                                                            self.get_learning_rate() * gradient[i])
+                                                            learing_rate * gradient[i])
             mse = np.sum((self.get_target_tensor() - self.get_source_TT_tensor().get_approximate_tensor()) ** 2) / \
                   len(self.get_target_tensor())
             print("RMSE: %f" % np.sqrt(mse))
