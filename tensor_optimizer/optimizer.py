@@ -66,7 +66,7 @@ class TT_tensor_optimizer(abstract_tensor_optimizer):
                                                            (self.get_target_tensor().shape[i] +
                                                             self.get_target_tensor().shape[i + 1]) // 2)
 
-    def stochastic_TT_SGD(self, sampling_rate):
+    def stochastic_TT_SGD(self, sampling_rate, iteration_time):
         # 采样个数
         numbers_of_samples = int(self.get_target_tensor().size * sampling_rate)
         # 生成采样点坐标
@@ -79,41 +79,70 @@ class TT_tensor_optimizer(abstract_tensor_optimizer):
             else:
                 for index, value in enumerate(i_index):
                     samples_index[index].append(value)
-        # 计算梯度
-        gradient = {}
-        for i in range(self.__source_TT_tensor.get_TT_rank()):
-            gradient[i] = np.zeros(self.__source_TT_tensor.get_i_G_tensor(i).shape)
+        for one_iteration in range(iteration_time):
+            # 计算梯度
+            gradient = {}
+            for i in range(self.__source_TT_tensor.get_TT_rank()):
+                gradient[i] = np.zeros(self.__source_TT_tensor.get_i_G_tensor(i).shape)
 
-            for sample in samples_index:
-                before_index = 0
-                after_index = i + 1
-                G_before = None
-                G_after = None
-                while before_index < i:
-                    if before_index == 0:
-                        G_before = self.__source_TT_tensor.get_i_G_tensor(before_index)[sample[before_index]:]
-                    else:
-                        G_before = np.dot(G_before,
-                                          self.__source_TT_tensor.get_i_G_tensor(before_index)[:sample[before_index]:])
-                    before_index += 1
-                while after_index <= self.__source_TT_tensor.get_TT_rank()-1:
-                    if G_after is None:
-                        if after_index == self.__source_TT_tensor.get_TT_rank()-1:
-                            G_after = self.__source_TT_tensor.get_i_G_tensor(after_index)[:sample[after_index]]
+                for sample in samples_index:
+                    before_index = 0
+                    after_index = i + 1
+                    G_before = None
+                    G_after = None
+                    while before_index < i:
+                        if before_index == 0:
+                            G_before = np.squeeze(self.
+                                                  __source_TT_tensor.get_i_G_tensor(before_index)[sample[before_index]:]
+                                                  , 0)
                         else:
-                            G_after = self.__source_TT_tensor.get_i_G_tensor(after_index)[:sample[after_index]:]
-                    else:
-                        if after_index == self.__source_TT_tensor.get_TT_rank() - 1:
-                            G_after = np.dot(G_after,
-                                             self.__source_TT_tensor.get_i_G_tensor(after_index)[:sample[after_index]])
+                            G_before = np.squeeze(np.dot(G_before,
+                                              self.__source_TT_tensor.
+                                                         get_i_G_tensor(before_index)[:sample[before_index]:]), 1)
+                        before_index = before_index + 1
+                    while after_index <= self.__source_TT_tensor.get_TT_rank()-1:
+                        if G_after is None:
+                            if after_index == self.__source_TT_tensor.get_TT_rank()-1:
+                                G_after = np.squeeze(self.__source_TT_tensor.
+                                                     get_i_G_tensor(after_index)[:sample[after_index]], 0)
+                            else:
+                                G_after = np.squeeze(self.__source_TT_tensor.
+                                                     get_i_G_tensor(after_index)[:sample[after_index]:], 0)
                         else:
-                            G_after = np.dot(G_after,
-                                             self.__source_TT_tensor.get_i_G_tensor(after_index)[:sample[after_index]:])
-                if G_before is None and G_after is not None:
-                    if i == 0:
-                        gradient[i][sample[i]:] += (np.dot(self.__source_TT_tensor.get_i_G_tensor(i)[sample[i]:],
-                                                           G_after) - self.get_target_tensor()[sample]
+                            if after_index == self.__source_TT_tensor.get_TT_rank() - 1:
+                                G_after = np.dot(G_after,
+                                                 np.squeeze(self.__source_TT_tensor.
+                                                            get_i_G_tensor(after_index)[:sample[after_index]], 0))
+                            else:
+                                G_after = np.dot(G_after,
+                                                 np.squeeze(self.__source_TT_tensor.
+                                                            get_i_G_tensor(after_index)[:sample[after_index]:], 0))
+                        after_index = after_index + 1
+                    if G_before is None and G_after is not None:
+                        gradient[i][sample[i]:] += (np.dot(np.squeeze(self.__source_TT_tensor.
+                                                                      get_i_G_tensor(i)[sample[i]:], 0), G_after)
+                                                    - self.get_target_tensor()[tuple(sample)]
                                                     ) * G_after.transpose()
+                    elif G_before is not None and G_after is None:
+                        gradient[i][:sample[i]] += (np.dot(G_before, np.squeeze(self.__source_TT_tensor.
+                                                                                get_i_G_tensor(i)[:sample[i]], 0))
+                                                    - self.get_target_tensor()[tuple(sample)]
+                                                    ) * G_before.transpose()
+                    else:
+                        gradient[i][:sample[i]:] += (np.dot(np.dot(G_before,
+                                                            np.squeeze(self.__source_TT_tensor.
+                                                                       get_i_G_tensor(i)[:sample[i]:], 0)),
+                                                            G_after)
+                                                    - self.get_target_tensor()[tuple(sample)]
+                                                    ) * (np.outer(G_after, G_before)).transpose()
+            for i in range(self.__source_TT_tensor.get_TT_rank()):
+                self.__source_TT_tensor.set_i_G_tensor(i, self.get_source_TT_tensor().get_i_G_tensor(i) +
+                                                            self.get_learning_rate() * gradient[i])
+            mse = np.sum(self.get_target_tensor() - self.get_source_TT_tensor().get_approximate_tensor() ** 2) / \
+                  len(self.get_target_tensor())
+            print("RMSE: %f" % np.sqrt(mse))
+
+
 
 
 
