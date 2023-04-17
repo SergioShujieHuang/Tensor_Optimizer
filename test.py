@@ -12,6 +12,7 @@ print(test_optimizer.get_source_TT_tensor().get_TT_rank())
 for i in range(test_optimizer.get_source_TT_tensor().get_TT_rank()):
     print(test_optimizer.get_source_TT_tensor().get_i_G_tensor(i).shape)
 
-test_optimizer.stochastic_TT_SGD(0.00001, 100)
 print("approximate tensor:")
 print(test_optimizer.get_source_TT_tensor().get_approximate_tensor().shape)
+
+test_optimizer.stochastic_TT_SGD(0.0001, 100)
