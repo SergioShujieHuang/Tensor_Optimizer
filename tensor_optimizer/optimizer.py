@@ -62,6 +62,9 @@ class TT_tensor_optimizer(abstract_tensor_optimizer):
     def stochastic_TT_SGD(self, sampling_rate, iteration_time, learing_rate):
         # 采样个数
         numbers_of_samples = int(self.get_target_tensor().size * sampling_rate)
+        if numbers_of_samples < 1:
+            print("sampling_rating is so low that can't sample even one element, please set it again")
+            return
         # 生成采样点坐标
         samples_index = []
         for i in range(self.get_target_tensor().ndim):
