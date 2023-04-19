@@ -38,26 +38,22 @@ class TT_tensor_optimizer(abstract_tensor_optimizer):
                 self.__source_TT_tensor.initial_i_G_tensor(i,
                                                            2,
                                                            self.get_target_tensor().shape[i],
-                                                           (self.get_target_tensor().shape[i] +
-                                                            self.get_target_tensor().shape[i + 1]) // 2,
+                                                           2 ,
                                                            0)
             # 初始化TT_tensor的尾部
             elif i == self.get_target_tensor().ndim - 1:
                 self.__source_TT_tensor.initial_i_G_tensor(i,
                                                            2,
-                                                           (self.get_target_tensor().shape[i] +
-                                                            self.get_target_tensor().shape[i - 1]) // 2,
+                                                           2,
                                                            self.get_target_tensor().shape[i],
                                                            0)
             # 初始化TT_tensor的中间部分
             else:
                 self.__source_TT_tensor.initial_i_G_tensor(i,
                                                            3,
-                                                           (self.get_target_tensor().shape[i] +
-                                                            self.get_target_tensor().shape[i - 1]) // 2,
+                                                           2,
                                                            self.get_target_tensor().shape[i],
-                                                           (self.get_target_tensor().shape[i] +
-                                                            self.get_target_tensor().shape[i + 1]) // 2)
+                                                           2)
 
     def stochastic_TT_SGD(self, sampling_rate, iteration_time, learing_rate):
         # 采样个数
@@ -67,14 +63,20 @@ class TT_tensor_optimizer(abstract_tensor_optimizer):
             return
         # 生成采样点坐标
         samples_index = []
-        for i in range(self.get_target_tensor().ndim):
-            i_index = np.random.choice(self.get_target_tensor().shape[i], numbers_of_samples)
-            if i == 0:
-                for value in i_index:
-                    samples_index.append([value])
-            else:
-                for index, value in enumerate(i_index):
-                    samples_index[index].append(value)
+        # for i in range(self.get_target_tensor().ndim):
+        #     i_index = np.random.choice(self.get_target_tensor().shape[i], numbers_of_samples)
+        #     if i == 0:
+        #         for value in i_index:
+        #             samples_index.append([value])
+        #     else:
+        #         for index, value in enumerate(i_index):
+        #             samples_index[index].append(value)
+        for i in range(self.get_target_tensor().shape[0]):
+            for j in range(self.get_target_tensor().shape[1]):
+                for k in range(self.get_target_tensor().shape[2]):
+                    samples_index.append([i, j, k])
+        print("wwowowowowowowowo")
+        print(samples_index)
         for one_iteration in range(iteration_time):
             # 计算梯度
             gradient = {}
@@ -126,9 +128,11 @@ class TT_tensor_optimizer(abstract_tensor_optimizer):
                                                     ) * (np.outer(G_after, G_before)).transpose()
             for i in range(self.__source_TT_tensor.get_TT_rank()):
                 self.__source_TT_tensor.set_i_G_tensor(i, self.get_source_TT_tensor().get_i_G_tensor(i) -
-                                                            learing_rate * gradient[i])
+                                                            learing_rate * gradient[i] * (1 / numbers_of_samples))
             mse = np.sum((self.get_target_tensor() - self.get_source_TT_tensor().get_approximate_tensor()) ** 2) / \
-                  len(self.get_target_tensor())
+                  np.size(self.get_target_tensor())
+            print("asdasdasdasd")
+            print(np.size(self.get_target_tensor()))
             print("RMSE: %f" % np.sqrt(mse))
 
 

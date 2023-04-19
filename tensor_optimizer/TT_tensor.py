@@ -25,6 +25,6 @@ class TT_tensor(object):
 
     def initial_i_G_tensor(self, i, tensor_rank, x, y, z):
         if tensor_rank == 2:
-            self.__G_tensor[i] = np.random.rand(x, y)
+            self.__G_tensor[i] = 0.1*np.random.randn(x, y) + 1
         elif tensor_rank == 3:
-            self.__G_tensor[i] = np.random.rand(x, y, z)
+            self.__G_tensor[i] = 0.1*np.random.randn(x, y, z) + 1
